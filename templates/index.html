@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trash Sorting Detection</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Poppins:wght@300&display=swap" rel="stylesheet">
+    <style>
+        /* Background styling with gradient */
+        body {
+            background: linear-gradient(135deg, #e0f7e9, #c7e3d1);
+            font-family: 'Poppins', sans-serif;
+            color: #2f4f4f;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 40px;
+            min-height: 100vh;
+            position: relative;
+        }
+        .container {
+            text-align: center;
+            flex: 1;
+            max-width: 800px;
+        }
+        h1 {
+            font-family: 'Fredoka One', cursive;
+            font-size: 2.2rem; /* Reduced font size */
+            margin-bottom: 15px;
+            color: #3c8d0d;
+            background: linear-gradient(90deg, #5aae23, #3c8d0d);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        p {
+            font-size: 1rem; /* Reduced font size */
+            margin-bottom: 25px;
+            color: #4b6b4b;
+        }
+        img {
+            border: none;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 640px;
+            height: auto;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+            transition: transform 0.3s ease;
+        }
+        img:hover {
+            transform: scale(1.05);
+        }
+        .decorative-img {
+            max-width: 100px; /* Reduced image size */
+            margin: 15px;
+            filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.2));
+            transition: transform 0.3s ease;
+        }
+        .decorative-img-container {
+            display: flex;
+            justify-content: center; /* Center align the items */
+            flex-wrap: wrap; /* Allow items to wrap to the next line if there's not enough space */
+            gap: 15px; /* Add some space between items */
+        }
+        
+        .bin {
+            display: flex;
+            flex-direction: column;
+            align-items: center; /* Center align text under the images */
+        }
+        .decorative-img-container:hover {
+            transform: scale(1.1);
+        }
+        /* Decorative gradient dividers */
+        .divider {
+            height: 4px;
+            background: linear-gradient(90deg, #5aae23, #3c8d0d, #5aae23);
+            border-radius: 2px;
+            margin: 20px auto;
+            width: 50%;
+        }
+        /* Footer styling */
+        footer {
+            background: linear-gradient(135deg, #f0f8f7, #e2f4e9);
+            color: #4b6b4b;
+            font-size: 0.8rem; /* Reduced font size */
+            text-align: center;
+            padding: 15px 0;
+            width: 100%;
+            box-shadow: 0 -4px 8px rgba(0, 0, 0, 0.1);
+            margin-top: auto;
+        }
+        footer a {
+            color: #3c8d0d;
+            text-decoration: none;
+        }
+        footer a:hover {
+            text-decoration: underline;
+        }
+        /* Add subtle animations */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .container, footer {
+            animation: fadeIn 1s ease-in-out;
+        }
+        .card {
+            display: inline-block;
+            width: 200px;
+            padding: 10px;
+            margin: 10px;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .card img {
+            width: 100%;
+            border-radius: 5px;
+        }
+        .card p {
+            text-align: center;
+            font-weight: bold;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <!-- Main Content -->
+    <div class="container">
+        <h1>Trash Sorting Detection</h1>
+        <p>Detecting and sorting waste for a cleaner planet.</p>
+        <div class="divider"></div>
+        <!-- Main Detection Feed -->
+        <img src="{{ url_for('video_feed') }}" alt="Trash Sorting Detection Feed" style="max-width: 100%; height: auto;">
+        
+        <div class="divider"></div>
+        <!-- Decorative Images -->
+        <div class="decorative-img-container">
+            <div class="bin">
+                <img src="{{ url_for('static', filename='assets/recy.png') }}" alt="Recycle Bin" class="decorative-img">
+                <p>Recycle Bin</p>
+            </div>
+            <div class="bin">
+                <img src="{{ url_for('static', filename='assets/waste.png') }}" alt="Waste Bin" class="decorative-img">
+                <p>Waste Bin</p>
+            </div>
+            <div class="bin">
+                <img src="{{ url_for('static', filename='assets/haz.png') }}" alt="Hazardous Waste Bin" class="decorative-img">
+                <p>Hazardous Waste Bin</p>
+            </div>
+            <div class="bin">
+                <img src="{{ url_for('static', filename='assets/general.png') }}" alt="General Waste Bin" class="decorative-img">
+                <p>General Waste Bin</p>
+            </div>
+        </div>        
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2024 Waste Sorting. Designed with care for a sustainable future.</p>
+        <p>POV's</p>
+    </footer>
+
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
