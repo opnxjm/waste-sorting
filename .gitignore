@@ -1,6 +1,6 @@
 # Virtual environment directory
 myenv/
-
+venv/
 # Model weights (Large file)
 yolov5s.pt
 
