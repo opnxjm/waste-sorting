@@ -1,70 +1,197 @@
-"use client";
+// "use client";
 
-import { useState, useRef, useEffect } from "react";
-import Card from "./components/card"
+// import { useState, useEffect, useRef } from "react";
+// import Card from "./components/card";
+
+// type BinType = 'recyclable' | 'compostable' | 'hazardous' | 'general' | 'unknown';
+
+// export default function Home() {
+//   const [detectedBin, setDetectedBin] = useState<BinType>("unknown");
+//   const [isVideoReady, setIsVideoReady] = useState(false); 
+//   const videoRef = useRef<HTMLVideoElement | null>(null);
+
+//   useEffect(() => {
+//     // Display the video feed
+//     if (videoRef.current) {
+//       videoRef.current.src = "http://127.0.0.1:5001/video_feed";
+//       videoRef.current.oncanplay = () => setIsVideoReady(true); 
+//     }
+
+//     // Fetch bin type periodically
+//     const intervalId = setInterval(async () => {
+//       try {
+//         const response = await fetch("http://127.0.0.1:5001/detected_bin", {
+//           method: "GET",
+//           headers: { "Content-Type": "application/json" },
+//         });
+//         if (!response.ok) {
+//           throw new Error(`HTTP error! Status: ${response.status}`);
+//         }
+  
+//         const data = await response.json();
+//         setDetectedBin(data.bin_type);
+//         console.log("Detected bin type:", data.bin_type);
+//       } catch (error) {
+//         console.error("Error fetching detected bin:", error);
+//         setDetectedBin("unknown");
+//       }
+//     }, 1000);
+  
+//     return () => clearInterval(intervalId);
+//   }, []);
+
+//   return (
+//     <div className="h-screen relative overflow-hidden">
+//       <main className="h-full">
+//         <div className="fixed top-0 text-center bg-gray-100 p-4 w-full z-10">
+//           <h1 className="text-2xl font-bold">Trash Sorting</h1>
+//         </div>
+//         <div className="w-screen h-screen bg-gray-200">
+//           <video
+//             ref={videoRef}
+//             autoPlay
+//             playsInline
+//             crossOrigin="anonymous"
+//             style={{ width: "100vw", height: "100%", objectFit: "cover" }}
+//           />
+//           {!isVideoReady && <div>Loading video feed...</div>} 
+//         </div>
+//         <div className="fixed bottom-10 w-full flex justify-center">
+//           <Card binType={detectedBin} />
+//         </div>
+//       </main>
+//     </div>
+//   );
+// }
+
+
+"use client";
+// import { useState, useEffect } from "react";
+// import Card from "./components/card";
+
+// type BinType = 'recyclable' | 'compostable' | 'hazardous' | 'general' | 'unknown';
+
+// export default function Home() {
+//   const [detectedBin, setDetectedBin] = useState<BinType>("unknown");
+
+//   useEffect(() => {
+//     // Fetch bin type periodically
+//     const intervalId = setInterval(async () => {
+//       try {
+//         const response = await fetch("http://127.0.0.1:5001/detected_bin", {
+//           method: "GET",
+//           headers: { "Content-Type": "application/json" },
+//         });
+//         if (!response.ok) {
+//           throw new Error(`HTTP error! Status: ${response.status}`);
+//         }
+
+//         const data = await response.json();
+//         setDetectedBin(data.bin_type);
+//         console.log("Detected bin type:", data.bin_type);
+//       } catch (error) {
+//         console.error("Error fetching detected bin:", error);
+//         setDetectedBin("unknown");
+//       }
+//     }, 1000);
+
+//     return () => clearInterval(intervalId);
+//   }, []);
+
+//   return (
+//     <div className="h-screen relative overflow-hidden">
+//       <main className="h-full">
+//         <div className="fixed top-0 text-center bg-gray-100 p-4 w-full z-10">
+//           <h1 className="text-2xl font-bold">Trash Sorting</h1>
+//         </div>
+//         <div className="w-screen h-screen bg-gray-200">
+//           <img
+//             src="http://127.0.0.1:5001/video_feed"
+//             alt="Video Stream"
+//             style={{ width: "100vw", height: "100vh", objectFit: "cover" }}
+//           />
+//         </div>
+//         <div className="fixed bottom-10 w-full flex justify-center">
+//           <Card binType={detectedBin} />
+//         </div>
+//       </main>
+//     </div>
+//   );
+// }
+
+import { useState, useEffect, useRef } from "react";
+import io, { Socket } from "socket.io-client";
+import Card from "./components/card";
+type BinType = 'recyclable' | 'compostable' | 'hazardous' | 'general' | 'unknown';
 
 export default function Home() {
-	const [showCamera, setShowCamera] = useState(false);
-	const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [detectedBin, setDetectedBin] = useState<BinType>("unknown");
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const socketRef = useRef<Socket | null>(null);
 
-	const openCamera = async () => {
-		setShowCamera(true);
-		if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-			try {
-				const stream = await navigator.mediaDevices.getUserMedia({
-					video: { facingMode: "environment" },
-				});
-				if (videoRef.current) {
-					videoRef.current.srcObject = stream;
-				}
-			} catch (error) {console.error("Error accessing camera:", error);
-			}
-		}
-	};
+  useEffect(() => {
+    // Connect to WebSocket server
+    socketRef.current = io("http://127.0.0.1:5001");
+    socketRef.current.on("connect", () => {
+      console.log("Connected to WebSocket server");
+    });
+  
+    socketRef.current.on("connect_error", (err) => {
+      console.log("WebSocket connection failed: ", err);
+    });
+  
+    // Listen for video frames
+    socketRef.current.on("video_frame", (frameData: ArrayBuffer) => {
+      // Ensure that frame data is received correctly
+      console.log("Received frame data", frameData);
 
-	useEffect(() => {
-		openCamera();
-	}, []); // Empty dependency array means this runs once when the component mounts
+      // Convert frame data to Blob and create a URL
+      const arrayBufferView = new Uint8Array(frameData);
+      const blob = new Blob([arrayBufferView], { type: "image/jpeg" });
+      const url = URL.createObjectURL(blob);
 
-	return (
-		<div className="h-screen font-[family-name:var(--font-geist-sans)] relative overflow-hidden">
-			<main className="h-full">
-				{/* Sticky Header */}
-				<div className="fixed top-0 text-center bg-gray-100 p-4 sm:p-6 w-full z-10 flex items-center justify-center">
-					<h1 className="text-xl sm:text-2xl font-bold text-black">
-						Trash Sorting
-					</h1>
-				</div>
+      // Set video source as the received frame
+      if (videoRef.current) {
+        videoRef.current.src = url;
+        videoRef.current.load(); 
+        console.log("Set video source to", url);
+      }
+    });
 
-				{/* Video Section */}
-				<div className="w-screen h-screen bg-green-500">
-					{showCamera && (
-						<div className="relative w-screen h-screen">
-							<video
-								ref={videoRef}
-								autoPlay
-								playsInline
-								style={{
-									width: "100vw",
-									height: "100%",
-									objectFit: "cover",
-								}}
-							></video>
-						</div>
-					)}
-				</div>
+    // Fetch detected bin type periodically
+    const intervalId = setInterval(async () => {
+      try {
+        const response = await fetch("http://127.0.0.1:5001/detected_bin", {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        });
+        const data = await response.json();
+        setDetectedBin(data.bin_type);
+      } catch (error) {
+        console.error("Error fetching detected bin:", error);
+      }
+    }, 1000);
 
-				{/* Sticky Card at the bottom */}
-				<div
-					className="fixed bottom-10 w-full p-4 sm:p-6 flex justify-center"
-					style={{ paddingBottom: "env(safe-area-inset-bottom)" }} // Tailwind doesn't have a utility for safe-area-inset
-				>
-					<Card />
-				</div>
-			</main>
-		</div>
-	);
+    return () => {
+      clearInterval(intervalId);
+      socketRef.current?.disconnect();
+    };
+  }, []);
 
-
-
+  return (
+    <><div className="w-screen h-screen bg-gray-200">
+      <video
+        ref={videoRef}
+        autoPlay
+        playsInline
+        style={{
+          width: "100vw",
+          height: "100vh",
+          objectFit: "cover",
+          backgroundColor: "black",
+        }} />
+    </div><div className="fixed bottom-10 w-full flex justify-center">
+        <Card binType={detectedBin} />
+      </div></>
+  );
 }

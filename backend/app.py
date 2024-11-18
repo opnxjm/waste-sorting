@@ -1,9 +1,15 @@
-from flask import Flask, render_template, Response
+from flask import Flask, Response, jsonify
+from flask_socketio import SocketIO, emit
 import cv2
 from ultralytics import YOLO
+from flask_cors import CORS
+import threading
 
 # Initialize Flask app
 app = Flask(__name__)
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode="eventlet")
+CORS(app, origins=["http://localhost:3000"], supports_credentials=True, methods=["GET"])
+#CORS(app, origins="*", supports_credentials=True)
 
 # Load the YOLOv8 model
 model = YOLO('./model/my_trained_model.pt')
@@ -16,93 +22,143 @@ if not cap.isOpened():
     print("Error: Could not open the camera.")
     exit()
 
-# Dictionary to map detected objects to their respective bins
+# Bin mapping dictionary
 BIN_MAPPING = {
-    'plastic-bottle': 'Recycle Bin',
-    'glass': 'Recycle Bin',
-    'straw': 'Recycle Bin',
-    'cardboard': 'Recycle Bin',
-    'paper': 'Recycle Bin',
-    'apple': 'Waste Bin',
-    'orange': 'Waste Bin',
-    'battery': 'Hazardous Bin',
-    'car battery': 'Hazardous Bin',
-    'snack package': 'General Waste Bin'
+    'plastic-bottle': 'recyclable',
+    'glass': 'recyclable',
+    'straw': 'recyclable',
+    'cardboard': 'recyclable',
+    'paper': 'recyclable',
+    'apple': 'compostable',
+    'orange': 'compostable',
+    'battery': 'hazardous',
+    'car battery': 'hazardous',
+    'snack package': 'general'
 }
 
-# Define colors for different bins
-BIN_COLORS = { #blue green red
-    'Recycle Bin': (6, 210, 255),       # Yellow
-    'Waste Bin': (0, 255, 0),           # Green
-    'Hazardous Bin': (5, 46, 254),       # Red
-    'General Waste Bin': (255, 54, 51) # Gray
+# Define colors for visualization
+BIN_COLORS = {
+    'recyclable': (6, 210, 255),  # Yellow
+    'compostable': (0, 255, 0),  # Green
+    'hazardous': (5, 46, 254),   # Red
+    'general': (255, 54, 51)     # Gray
 }
 
-def generate_frames():
+detected_bin = "unknown"  # Default bin type
+frame_lock = threading.Lock()  # Lock to safely share the frame across threads
+
+
+def detect_objects():
+    """Continuously detect objects from the webcam feed."""
+    global detected_bin
     while True:
-        # Read a frame from the camera
         ret, frame = cap.read()
         if not ret:
-            break
+            continue
 
-        # Run YOLOv8 detection on the frame with confidence threshold set to 40%
-        results = model(frame, conf=0.4)
+        # Run YOLOv8 detection
+        results = model(frame, conf=0.6)
 
-        # Visualize the results
-        annotated_frame = frame.copy()
+        # Process detections
         for result in results[0].boxes:
-            # Get the class ID and confidence score
-            class_id = result.cls
-            confidence = result.conf
-            xyxy = result.xyxy  # Bounding box coordinates
+            class_id = int(result.cls.item())
+            label = results[0].names[class_id]
 
-            # Debugging: print xyxy to check its structure
-            print("Bounding box (xyxy):", xyxy)
+            # Map label to bin
+            if label in BIN_MAPPING:
+                detected_bin = BIN_MAPPING[label]
+                break
 
-            # Check the type and structure of xyxy
-            if len(xyxy) == 1:
-                # If it's a single value (e.g., tensor), convert it to a list or array
-                xyxy = xyxy[0].tolist()
 
-            # Now, unpack the bounding box coordinates
-            x1, y1, x2, y2 = xyxy
+# def generate_frames():
+#     """Yield video frames for streaming."""
+#     while True:
+#         ret, frame = cap.read()
+#         if not ret:
+#             print("Failed to capture frame. Exiting...")  # Log capture failure
+#             break  # Optionally, you could also continue if you prefer
 
-            # Get the label based on the class ID (this depends on how YOLO model is trained)
-            label = results[0].names[class_id.item()]
-            
-            # Check the label and map to the appropriate bin
+#         print("Sending frame...")  # Log that the frame is being sent
+
+#         # Annotate frame with YOLO results
+#         results = model(frame, conf=0.6)
+
+#         for result in results[0].boxes:
+#             class_id = int(result.cls.item())
+#             xyxy = result.xyxy[0].tolist()
+#             label = results[0].names[class_id]
+
+#             # Check for recognized label and map to bin
+#             if label in BIN_MAPPING:
+#                 bin_label = BIN_MAPPING[label]
+#                 color = BIN_COLORS[bin_label]
+
+#                 # Draw rectangle and label
+#                 x1, y1, x2, y2 = map(int, xyxy)
+#                 cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
+#                 cv2.putText(frame, bin_label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.8, color, 2)
+
+#         # Encode frame into JPEG
+#         _, buffer = cv2.imencode('.jpg', frame)
+        
+#         # Ensure successful encoding before yielding the frame
+#         if _:
+#             yield (b'--frame\r\n'
+#                    b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
+#         else:
+#             print("Failed to encode frame. Continuing...")  # Log encoding failure
+#             continue  # Continue to the next iteration if encoding fails
+
+def generate_frames():
+    """Yield video frames for streaming."""
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            continue
+
+        # Annotate frame with YOLO results
+        results = model(frame, conf=0.6)
+        for result in results[0].boxes:
+            class_id = int(result.cls.item())
+            xyxy = result.xyxy[0].tolist()
+            label = results[0].names[class_id]
+
             if label in BIN_MAPPING:
                 bin_label = BIN_MAPPING[label]
-                bin_color = BIN_COLORS[bin_label]
-                
-                # Draw a rectangle around the detected object
-                cv2.rectangle(annotated_frame, (int(x1), int(y1)), (int(x2), int(y2)), bin_color, 2)
-                
-                # Add text for bin classification
-                font = cv2.FONT_HERSHEY_SIMPLEX
-                text_size = cv2.getTextSize(bin_label, font, 0.8, 2)[0]
-                text_x = int((x1 + x2 - text_size[0]) / 2)
-                text_y = int(y1 - 10)
-                
-                cv2.putText(annotated_frame, bin_label, (text_x, text_y), font, 0.8, bin_color, 2)
+                color = BIN_COLORS[bin_label]
 
-        # Encode the frame in JPEG format
-        ret, buffer = cv2.imencode('.jpg', annotated_frame)
-        frame = buffer.tobytes()
+                # Draw rectangle and label
+                x1, y1, x2, y2 = map(int, xyxy)
+                cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
+                cv2.putText(frame, bin_label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.8, color, 2)
 
-        # Yield the frame in byte format
-        yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+        # Encode frame to JPEG
+        _, buffer = cv2.imencode('.jpg', frame)
+        # Send frame to WebSocket client
+        socketio.emit('video_frame', buffer.tobytes())
+        print("Sent frame data to client")  # Log that a frame has been sent to the client
+        socketio.sleep(0.1)
 
-@app.route('/')
-def index():
-    # Render the main page
-    return render_template('index.html')
 
 @app.route('/video_feed')
 def video_feed():
-    # Video streaming route
+    """Video feed route."""
     return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
+
+@app.route('/detected_bin')
+def get_detected_bin():
+    """Return the detected bin as JSON."""
+    # print(f"Detected bin type: {detected_bin}")
+    # print("Received request for detected_bin")
+    return jsonify(bin_type=detected_bin)
+
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    # Start the detection thread
+    threading.Thread(target=detect_objects, daemon=True).start()
+
+    # Run the Flask app
+    # app.run(host="0.0.0.0", port=5001, debug=True)
+    socketio.start_background_task(generate_frames)
+    socketio.run(app, host='0.0.0.0', port=5001, debug=True)

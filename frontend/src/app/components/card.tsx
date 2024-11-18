@@ -8,6 +8,7 @@ interface BinDetail {
 }
 
 export default function Card({ binType = "general" }: { binType?: BinType }) {
+	console.log(binType);
 	const binDetail: Record<BinType, BinDetail> = {
 		recyclable: {
 			src: "/images/recycleable.png",
@@ -34,7 +35,7 @@ export default function Card({ binType = "general" }: { binType?: BinType }) {
 			message: "Place in blue bin",
 		},
 		unknown: {
-			src: "/images/unknown.png",
+			src: "/images/general.png",
 			alt: "Unknown",
 			title: "Cannot Detects Object",
 			message: "This bin type is unknown.",
