@@ -1,114 +1,228 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trash Sorting Detection</title>
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body {
-            background: linear-gradient(135deg, #e0f7e9, #c7e3d1);
-            font-family: 'Poppins', sans-serif;
-            color: #2f4f4f;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding-top: 40px;
-            min-height: 100vh;
-            position: relative;
-        }
-        .container {
-            text-align: center;
-            max-width: 800px;
-        }
-        img {
-            width: 100%;
-            max-width: 640px;
-            height: auto;
-            border-radius: 10px;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-        }
-        .card {
-            display: inline-block;
-            width: 200px;
-            padding: 10px;
-            margin: 10px;
-            border: 2px solid #ccc;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>Trash Sorting Detection</h1>
-        <img id="video-feed" src="{{ url_for('video_feed') }}" alt="Trash Sorting Feed" style="max-width: 100%; height: auto;">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Trash Sorting Detection</title>
+		<link
+			href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+			rel="stylesheet"
+		/>
+		<style>
+			body {
+				background: linear-gradient(135deg, #e0f7e9, #c7e3d1);
+				font-family: "Poppins", sans-serif;
+				color: #2f4f4f;
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				justify-content: center;
+				min-height: 100vh;
+				position: relative;
+			}
+			p {
+				margin: 0;
+				margin-top: 10px;
+				margin-bottom: 10px;
+			}
+			.container {
+				text-align: center;
+				max-width: 100%;
+				width: 100vw;
+				height: 100vh;
+				max-height: 100vh;
+				padding-right: 0;
+				padding-left: 0;
+				position: relative;
+				align-items: center;
+			}
+			.title {
+				text-align: center;
+				max-width: 100%;
+				width: 100vw;
+				background-color: #fff;
+				box-sizing: border-box;
+				margin-top: 0;
+				margin-bottom: 0;
+				padding-top: 0;
+				font-size: 2rem;
+				font-weight: bold;
+				color: black;
+				display: flex;
+				justify-content: center;
+				align-items: center;
+			}
 
-        <!-- Bin Card -->
-        <div id="bin-card" class="card">
-            <img id="bin-image" src="/images/general.png" alt="General Bin" class="decorative-img">
-            <p id="bin-title">General Bin</p>
-            <p id="bin-message">Place in blue bin</p>
-        </div>
-    </div>
+			img {
+				width: 100%;
+				max-width: 100vw;
+				height: auto;
+			}
+			.card {
+				display: flex;
+				flex-direction: column;
+				justify-content: center;
+				align-items: center;
+				width: fit-content;
+				border-radius: 8px;
+				box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+				background-color: #fff;
+				height: auto;
+				position: absolute;
+				bottom: 100px;
+				left: 50%;
+				transform: translateX(-50%);
+			}
+			#bin-message {
+				font-size: 1rem;
+				font-weight: normal;
+				margin: 0;
+				display: inline;
+				text-align: left;
+				white-space: nowrap;
+				overflow: hidden;
+				text-overflow: ellipsis;
+			}
 
-    <script>
-        // Define the bin details
-        const binDetails = {
-            recyclable: {
-                src: "/static/assets/recy.png",
-                alt: "Recyclable Bin",
-                title: "Recyclable Bin",
-                message: "Place in yellow bin",
-            },
-            compostable: {
-                src: "/static/assets/waste.png",
-                alt: "Compostable Bin",
-                title: "Compostable Bin",
-                message: "Place in green bin",
-            },
-            hazardous: {
-                src: "/static/assets/haz.png",
-                alt: "Hazardous Bin",
-                title: "Hazardous Bin",
-                message: "Place in red bin",
-            },
-            general: {
-                src: "/static/assets/general.png",
-                alt: "General Bin",
-                title: "General Bin",
-                message: "Place in blue bin",
-            },
-        };
+			.card-content {
+				display: flex;
+				flex-direction: row;
+				align-items: center;
+			}
 
-        // Function to update the bin card based on the detected bin
-        function updateBinCard(binType) {
-            const binDetail = binDetails[binType] || binDetails.general;
-            document.getElementById("bin-image").src = binDetail.src;
-            document.getElementById("bin-image").alt = binDetail.alt;
-            document.getElementById("bin-title").textContent = binDetail.title;
-            document.getElementById("bin-message").textContent = binDetail.message;
-        }
+			.decorative-img {
+				width: 60px;
+				height: 80px;
+				object-fit: cover;
+				margin-left: 15px;
+				margin-right: 15px;
+				margin-top: 10px;
+				margin-bottom: 10px;
+			}
 
-        // Function to fetch the detected bin from the Flask server
-        function fetchDetectedBin() {
-            fetch("/detected_bin")  // Flask endpoint
-                .then(response => response.json())
-                .then(data => {
-                    const detectedBin = data.bin_type;  // Extract bin type from JSON response
-                    updateBinCard(detectedBin);  // Update the bin card with the fetched data
-                    console.log("Detected bin:", detectedBin);
-                })
-                .catch(error => console.error("Error fetching bin data:", error));
-        }
+			.card-body {
+				display: flex;
+				flex-direction: column;
+				justify-content: center;
+				align-items: flex-start;
+				font-weight: bold;
+				font-size: 1.3rem;
+			}
+			#bin-message {
+				font-size: 1rem;
+				font-weight: normal;
+				margin: 0;
+				text-align: left;
+				white-space: normal;
+			}
+			#bin-title {
+				white-space: nowrap;
+				margin-bottom: 5px;
+			}
+			#video-feed {
+				width: 100vw;
+				height: 100vh;
+				object-fit: cover;
+				object-position: center;
+				position: absolute;
+				top: 0;
+				left: 0;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="title">
+			<p>Trash Sorting</p>
+		</div>
+		<div class="container">
+			<img
+				id="video-feed"
+				src="{{ url_for('video_feed') }}"
+				alt="Trash Sorting Feed"
+				style="style"
+				="width: 100vw; height: 100vh; object-fit: cover; object-position: center; position: absolute; top: 0; left: 0;"
+			/>
 
-        // Fetch the detected bin every 1 second (adjust the interval if needed)
-        setInterval(fetchDetectedBin, 1000);
-    </script>
+			<!-- Bin Card -->
+			<div id="bin-card" class="card">
+				<div class="card-content">
+					<img
+						id="bin-image"
+						src="/static/assets/fail.png"
+						alt="Unknown"
+						class="decorative-img"
+					/>
+					<div class="card-body">
+						<p id="bin-title">Cannot Detects Object</p>
+						<p id="bin-message">Unknown Object</p>
+					</div>
+				</div>
+			</div>
+		</div>
 
-    <!-- Bootstrap JS and dependencies -->
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-</body>
+		<script>
+			const binDetails = {
+				recyclable: {
+					src: "/static/assets/recycleable.png",
+					alt: "Recyclable Bin",
+					title: "Recyclable Bin",
+					message: "Place in yellow bin",
+				},
+				compostable: {
+					src: "/static/assets/compostable.png",
+					alt: "Compostable Bin",
+					title: "Compostable Bin",
+					message: "Place in green bin",
+				},
+				hazardous: {
+					src: "/static/assets/hazardous.png",
+					alt: "Hazardous Bin",
+					title: "Hazardous Bin",
+					message: "Place in red bin",
+				},
+				general: {
+					src: "/static/assets/general.png",
+					alt: "General Bin",
+					title: "General Bin",
+					message: "Place in blue bin",
+				},
+				unknown: {
+					src: "/static/assets/fail.png",
+					alt: "Unknown",
+					title: "Cannot Detects Object",
+					message: "Unknown Object",
+				},
+			};
+
+			function updateBinCard(binType) {
+				const binDetail = binDetails[binType] || binDetails.general;
+				document.getElementById("bin-image").src = binDetail.src;
+				document.getElementById("bin-image").alt = binDetail.alt;
+				document.getElementById("bin-title").textContent =
+					binDetail.title;
+				document.getElementById("bin-message").textContent =
+					binDetail.message;
+			}
+
+			function fetchDetectedBin() {
+				fetch("/detected_bin") // Flask endpoint
+					.then((response) => response.json())
+					.then((data) => {
+						const detectedBin = data.bin_type; // Extract bin type from JSON response
+						updateBinCard(detectedBin); // Update the bin card with the fetched data
+						console.log("Detected bin:", detectedBin);
+					})
+					.catch((error) =>
+						console.error("Error fetching bin data:", error)
+					);
+			}
+
+			setInterval(fetchDetectedBin, 1000);
+		</script>
+
+		<!-- Bootstrap JS and dependencies -->
+		<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+		<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+	</body>
 </html>
