@@ -6,14 +6,12 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)
 
-# Load YOLO model (make sure to use your trained model file)
-model = YOLO('./model/my_trained_model.pt')  # or a custom model
-cap = cv2.VideoCapture(0)  # Video capture from webcam
+model = YOLO('./model/best.pt') 
+cap = cv2.VideoCapture(0)
 
 if not cap.isOpened():
     print("Error: Could not open webcam.")
 
-# BIN_MAPPING and BIN_COLORS
 BIN_MAPPING = {
     "apple": "compostable",
     "banana-peel": "compostable",
@@ -39,14 +37,13 @@ BIN_MAPPING = {
 }
 
 BIN_COLORS = {
-    'recyclable': (6, 210, 255),  # Yellow
-    'compostable': (0, 255, 0),  # Green
-    'hazardous': (5, 46, 254),   # Red
-    'general': (255, 54, 51)     # Gray
+    'recyclable': (6, 210, 255),
+    'compostable': (0, 255, 0),
+    'hazardous': (5, 46, 254), 
+    'general': (255, 54, 51),
 }
 
-# Initialize current_bin as a global variable
-current_bin = "unknown"  # Default bin
+current_bin = "unknown"
 
 @app.route('/')
 def index():
@@ -65,49 +62,43 @@ def detected_bin():
 
 def generate_frames():
     """Yield video frames for streaming."""
-    global current_bin  # Ensure we are modifying the global variable
+    global current_bin 
 
     while True:
         ret, frame = cap.read()
         if not ret:
-            print("Failed to capture frame. Exiting...")  # Log capture failure
-            break  # Optionally, you could also continue if you prefer
+            print("Failed to capture frame. Exiting...") 
+            break 
 
-        print("Sending frame...")  # Log that the frame is being sent
-
-        # Annotate frame with YOLO results
+        print("Sending frame...") 
+        
         results = model(frame, conf=0.6)
         current_bin = "unknown"
         
-        # Process each detected object
+
         for result in results[0].boxes:
-            class_id = int(result.cls.item())  # Get class ID
-            xyxy = result.xyxy[0].tolist()  # Bounding box coordinates
-            label = results[0].names[class_id]  # Get object label (e.g., 'apple')
+            class_id = int(result.cls.item())
+            xyxy = result.xyxy[0].tolist()
+            label = results[0].names[class_id] 
 
-            # Check if the label exists in BIN_MAPPING
             if label in BIN_MAPPING:
-                bin_label = BIN_MAPPING[label]  # Get mapped bin
-                color = BIN_COLORS[bin_label]  # Get corresponding color
+                bin_label = BIN_MAPPING[label] 
+                color = BIN_COLORS[bin_label] 
 
-                # Update the global current_bin variable
                 current_bin = bin_label
 
-                # Draw the bounding box and label on the frame
                 x1, y1, x2, y2 = map(int, xyxy)
                 cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
                 cv2.putText(frame, bin_label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.8, color, 2)
 
-        # Encode frame into JPEG
         _, buffer = cv2.imencode('.jpg', frame)
         
-        # Ensure successful encoding before yielding the frame
         if _:
             yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
         else:
-            print("Failed to encode frame. Continuing...")  # Log encoding failure
-            continue  # Continue to the next iteration if encoding fails
+            print("Failed to encode frame. Continuing...")
+            continue
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5003, debug=True)
+    app.run(host='0.0.0.0', port=8080, debug=True)
