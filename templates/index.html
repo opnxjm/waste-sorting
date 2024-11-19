@@ -9,9 +9,13 @@
 			rel="stylesheet"
 		/>
 		<style>
+			@font-face {
+				font-family: "GeistVF";
+				src: url("/font/Geist-Regular.woff2") format("woff");
+			}
 			body {
 				background: linear-gradient(135deg, #e0f7e9, #c7e3d1);
-				font-family: "Poppins", sans-serif;
+				font-family: "GeistVF", sans-serif;
 				color: #2f4f4f;
 				display: flex;
 				flex-direction: column;
@@ -64,7 +68,7 @@
 				justify-content: center;
 				align-items: center;
 				width: fit-content;
-				border-radius: 8px;
+				border-radius: 16px;
 				box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 				background-color: #fff;
 				height: auto;
@@ -114,11 +118,14 @@
 				margin: 0;
 				text-align: left;
 				white-space: normal;
+				color: #818999;
 			}
 			#bin-title {
 				white-space: nowrap;
 				margin-bottom: 5px;
 				margin-top: 0px;
+				color: black;
+				font-weight: 500;
 			}
 			#video-feed {
 				width: 100vw;
