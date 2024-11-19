@@ -150,8 +150,6 @@
 				style="style"
 				="width: 100vw; height: 100vh; object-fit: cover; object-position: center; position: absolute; top: 0; left: 0;"
 			/>
-
-			<!-- Bin Card -->
 			<div id="bin-card" class="card">
 				<div class="card-content">
 					<img
@@ -213,11 +211,11 @@
 			}
 
 			function fetchDetectedBin() {
-				fetch("/detected_bin") // Flask endpoint
+				fetch("/detected_bin")
 					.then((response) => response.json())
 					.then((data) => {
-						const detectedBin = data.bin_type; // Extract bin type from JSON response
-						updateBinCard(detectedBin); // Update the bin card with the fetched data
+						const detectedBin = data.bin_type;
+						updateBinCard(detectedBin);
 						console.log("Detected bin:", detectedBin);
 					})
 					.catch((error) =>
@@ -227,8 +225,6 @@
 
 			setInterval(fetchDetectedBin, 1000);
 		</script>
-
-		<!-- Bootstrap JS and dependencies -->
 		<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
 		<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
 		<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
