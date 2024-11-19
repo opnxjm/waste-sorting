@@ -6,7 +6,7 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)
 
-model = YOLO('./model/best.pt') 
+model = YOLO('./model/latest_model.pt') 
 cap = cv2.VideoCapture(0)
 
 if not cap.isOpened():
